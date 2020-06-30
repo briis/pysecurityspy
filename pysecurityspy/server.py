@@ -43,16 +43,17 @@ class SecuritySpyServer:
         self._port = port
         self._username = username
         self._password = password
-        self._use_sll = use_ssl
         self._session: ClientSession = session
         self._auth = b64encode(bytes(self._username + ":" + self._password, "utf-8")).decode()
+        self._base = "http" if not use_ssl else "https"
 
     async def async_get_cameras(self) -> None:
         return await self._get_camera_list()
 
     async def _get_camera_list(self) -> None:
         """Returns a list of the attached Cameras."""
-        endpoint = 'http://%s:%s/++systemInfo&auth=%s' % (self._host, self._port, self._auth)
+        endpoint = f"{self._base}://{self._host}:{self._port}/++systemInfo&auth={self._auth}"
+        _LOGGER.debug(endpoint)
         response = await self.async_request("get", endpoint)
 
         cameras = ET.fromstring(response)
@@ -73,7 +74,7 @@ class SecuritySpyServer:
                     recording_mode = RECORDING_MODE_MOTION
                 # rtsp_video = f"rtsp://{self._host}:{self._port}/++stream?cameraNum={uid}&width=1920&height=1080&req_fps=15&auth={self._auth}"
                 rtsp_video = f"rtsp://{self._username}:{self._password}@{self._host}:{self._port}/++stream?cameraNum={uid}&width=1920&height=1080&req_fps=15"
-                still_image = f"http://{self._host}:{self._port}/++image?cameraNum={uid}&width=1920&height=1080&quality=1&auth={self._auth}"
+                still_image = f"{self._base}://{self._host}:{self._port}/++image?cameraNum={uid}&width=1920&height=1080&quality=1&auth={self._auth}"
                 item = {
                     "uid": int(uid),
                     "online": online,
@@ -99,7 +100,7 @@ class SecuritySpyServer:
 
     async def get_snapshot_image(self, camera_id):
         """ Returns a Snapshot image from a Camera. """
-        endpoint = f"http://{self._host}:{self._port}/++image?cameraNum={camera_id}&width=1920&height=1080&quality=1&auth={self._auth}"
+        endpoint = f"{self._base}://{self._host}:{self._port}/++image?cameraNum={camera_id}&width=1920&height=1080&quality=1&auth={self._auth}"
         response = await self.async_request("get", endpoint, True)
         return response
 
@@ -118,7 +119,7 @@ class SecuritySpyServer:
             schedule = 0
             capturemode = "CMA"
 
-        endpoint = f"http://{self._host}:{self._port}/++setSchedule?cameraNum={camera_id}&schedule={schedule}&mode={capturemode}&override=0&auth={self._auth}"
+        endpoint = f"{self._base}://{self._host}:{self._port}/++setSchedule?cameraNum={camera_id}&schedule={schedule}&mode={capturemode}&override=0&auth={self._auth}"
         response = await self.async_request("get", endpoint, False)
         if response == "OK":
             return new_mode
@@ -127,7 +128,7 @@ class SecuritySpyServer:
 
     async def get_recording_mode(self, camera_id):
         """Returns recording mode for a specific camera."""
-        endpoint = f"http://{self._host}:{self._port}/++cameramodes?cameraNum={camera_id}"
+        endpoint = f"{self._base}://{self._host}:{self._port}/++cameramodes?cameraNum={camera_id}"
         response = await self.async_request("get", endpoint, False)
         
         items = []

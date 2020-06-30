@@ -39,9 +39,9 @@ async def run_tests():
     session = ClientSession()
     secspy = SecuritySpyServer(host, port, username, password, use_ssl, session)
 
-    cameras = await camera_list(secspy, False)
+    cameras = await camera_list(secspy, True)
     # await snapshots(secspy, cameras)
-    await recording_mode(secspy, 2, RECORDING_MODE_NEVER)
+    await recording_mode(secspy, 2, RECORDING_MODE_MOTION)
     await get_recording_mode(secspy, 2)
 
     #Close the session
