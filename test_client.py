@@ -13,12 +13,10 @@ from pysecurityspy.errors import ResultError
 
 _LOGGER = logging.getLogger(__name__)
 
-async def camera_list():
-    """Returns a list of configured Cameras."""
-
+async def run_tests():
+    """Run all the tests."""
     start = time.time()
     logging.basicConfig(level=logging.DEBUG)
-    _LOGGER.info("GETTING CAMERA LIST:")
 
    # Read the settings.json file
     path_index = __file__.rfind("/")
@@ -35,11 +33,7 @@ async def camera_list():
     session = ClientSession()
     secspy = SecuritySpyServer(host, port, username, password, use_ssl, session)
 
-    try:
-        data = await secspy.async_get_cameras()
-        _LOGGER.info(data)
-    except ResultError:
-        _LOGGER.info("Something went wrong in retrieving data")
+    await camera_list(secspy)
 
     #Close the session
     await session.close()
@@ -47,7 +41,35 @@ async def camera_list():
     end = time.time()
     _LOGGER.info("Execution time: %s seconds", end - start)
 
+async def camera_list(secspy):
+    """Returns a list of configured Cameras."""
+
+    _LOGGER.info("GETTING CAMERA LIST:")
+
+    try:
+        data = await secspy.async_get_cameras()
+        for row in data:
+            _LOGGER.info("\n" +
+                f"UID: {row.uid}" + "\n" + 
+                f"ONLINE: {row.online}" + "\n" + 
+                f"NAME: {row.name}" + "\n" + 
+                f"IMAGE WIDTH: {row.image_width}" + "\n" + 
+                f"IMAGE HEIGHT: {row.image_height}" + "\n" +
+                f"SENSITIVITY: {row.mdsensitivity}" + "\n" +
+                f"MODEL: {row.camera_model}" + "\n" + 
+                f"MODE_C: {row.mode_c}" + "\n" + 
+                f"MODE_M: {row.mode_m}" + "\n" + 
+                f"MODE_A: {row.mode_a}" + "\n" +
+                f"RECORDING MODE: {row.recording_mode}" + "\n" +
+                f"VIDEO: {row.rtsp_video}" + "\n" +
+                f"IMAGE: {row.still_image}" + "\n"
+            )
+
+    except ResultError:
+        _LOGGER.info("Something went wrong in retrieving data")
+
+
 # Start the program
 loop = asyncio.get_event_loop()
-loop.run_until_complete(camera_list())
+loop.run_until_complete(run_tests())
 loop.close()

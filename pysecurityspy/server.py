@@ -16,6 +16,9 @@ from pysecurityspy.errors import (
     RequestError,
     ResultError,
 )
+from pysecurityspy.dataclasses import (
+    CameraData,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,22 +51,16 @@ class SecuritySpyServer:
         response = await self.async_request("get", endpoint)
 
         cameras = ET.fromstring(response)
+        items = []
         for item in cameras.iterfind('cameralist/camera'):
             try:
                 uid = item.findtext("number")
-                # Get if camera is online
                 if item.findtext("connected") == "yes":
                     online = True
                 else:
                     online = False
-                name = item.findtext("name")
-                image_width = item.findtext("width")
-                image_height = item.findtext("height")
-                mdsensitivity = item.findtext("mdsensitivity")
-                camera_model = item.findtext("devicename")
-                mode_c = item.findtext("mode_c")
+                mode_c = item.findtext("mode-c")
                 mode_m = item.findtext("mode-m")
-                mode_a = item.findtext("mode-a")
                 recording_mode = "never"
                 if mode_c == "armed":
                     recording_mode = "always"
@@ -71,12 +68,28 @@ class SecuritySpyServer:
                     recording_mode = "motion"
                 rtsp_video = "rtsp://%s:%s@%s:%s/++stream?cameraNum=%s" % (self._username, self._password, self._host, self._port, uid)
                 still_image = "http://%s:%s/++image?cameraNum=%s&auth=%s" % (self._host, self._port, uid, auth)
-                _LOGGER.info(f"CAMERA NAME: {name}")
+                item = {
+                    "uid": int(uid),
+                    "online": online,
+                    "name": item.findtext("name"),
+                    "image_width": int(item.findtext("width")),
+                    "image_height": int(item.findtext("height")),
+                    "mdsensitivity": int(item.findtext("mdsensitivity")),
+                    "camera_model": item.findtext("devicename"),
+                    "mode_c": mode_c,
+                    "mode_m": mode_m,
+                    "mode_a": item.findtext("mode-a"),
+                    "recording_mode": recording_mode,
+                    "rtsp_video": rtsp_video,
+                    "still_image": still_image,
+                }
+                items.append(CameraData(item))
+
             except BaseException as e:
                 _LOGGER.debug("Error when retrieving Camera Data: " + str(e))
                 raise ResultError
 
-        return name
+        return items
         
     async def async_request(self, method: str, endpoint: str) -> dict:
         """Make a request against the SmartWeather API."""
