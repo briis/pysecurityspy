@@ -9,6 +9,7 @@ import json
 from aiohttp import ClientSession
 
 from pysecurityspy.server import SecuritySpyServer
+from pysecurityspy.errors import ResultError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,8 +35,11 @@ async def camera_list():
     session = ClientSession()
     secspy = SecuritySpyServer(host, port, username, password, use_ssl, session)
 
-    data = await secspy.async_get_cameras()
-    print(data)
+    try:
+        data = await secspy.async_get_cameras()
+        _LOGGER.info(data)
+    except ResultError:
+        _LOGGER.info("Something went wrong in retrieving data")
 
     #Close the session
     await session.close()

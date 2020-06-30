@@ -45,12 +45,39 @@ class SecuritySpyServer:
         """Returns a list of the attached Cameras."""
         auth = b64encode(bytes(self._username + ":" + self._password, "utf-8")).decode()
         endpoint = 'http://%s:%s/++systemInfo&auth=%s' % (self._host, self._port, auth)
-
         response = await self.async_request("get", endpoint)
-        # decoded_content = response.content.decode("utf-8")
-        cameras = ET.fromstring(response)
-        return cameras
 
+        cameras = ET.fromstring(response)
+        for item in cameras.iterfind('cameralist/camera'):
+            try:
+                uid = item.findtext("number")
+                # Get if camera is online
+                if item.findtext("connected") == "yes":
+                    online = True
+                else:
+                    online = False
+                name = item.findtext("name")
+                image_width = item.findtext("width")
+                image_height = item.findtext("height")
+                mdsensitivity = item.findtext("mdsensitivity")
+                camera_model = item.findtext("devicename")
+                mode_c = item.findtext("mode_c")
+                mode_m = item.findtext("mode-m")
+                mode_a = item.findtext("mode-a")
+                recording_mode = "never"
+                if mode_c == "armed":
+                    recording_mode = "always"
+                elif mode_m == "armed":
+                    recording_mode = "motion"
+                rtsp_video = "rtsp://%s:%s@%s:%s/++stream?cameraNum=%s" % (self._username, self._password, self._host, self._port, uid)
+                still_image = "http://%s:%s/++image?cameraNum=%s&auth=%s" % (self._host, self._port, uid, auth)
+                _LOGGER.info(f"CAMERA NAME: {name}")
+            except BaseException as e:
+                _LOGGER.debug("Error when retrieving Camera Data: " + str(e))
+                raise ResultError
+
+        return name
+        
     async def async_request(self, method: str, endpoint: str) -> dict:
         """Make a request against the SmartWeather API."""
 
