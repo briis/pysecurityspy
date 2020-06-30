@@ -1,5 +1,7 @@
 """Constant definitions for pysecurityspy."""
 
+DEFAULT_TIMEOUT = 10
+
 TRIGGER_TYPE = {
     1: "Video motion detection",
     2: "Audio detection",
