@@ -5,3 +5,9 @@ from pysecurityspy.errors import (
     RequestError,
     ResultError,
 )
+from pysecurityspy.const import (
+    RECORDING_MODE_ALWAYS,
+    RECORDING_MODE_MOTION,
+    RECORDING_MODE_ACTION,
+    RECORDING_MODE_NEVER,
+)

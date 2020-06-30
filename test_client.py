@@ -10,6 +10,12 @@ from aiohttp import ClientSession
 
 from pysecurityspy.server import SecuritySpyServer
 from pysecurityspy.errors import ResultError
+from pysecurityspy.const import (
+    RECORDING_MODE_ALWAYS,
+    RECORDING_MODE_MOTION,
+    RECORDING_MODE_ACTION,
+    RECORDING_MODE_NEVER,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,7 +39,10 @@ async def run_tests():
     session = ClientSession()
     secspy = SecuritySpyServer(host, port, username, password, use_ssl, session)
 
-    await camera_list(secspy)
+    cameras = await camera_list(secspy, False)
+    # await snapshots(secspy, cameras)
+    await recording_mode(secspy, 2, RECORDING_MODE_NEVER)
+    await get_recording_mode(secspy, 2)
 
     #Close the session
     await session.close()
@@ -41,32 +50,65 @@ async def run_tests():
     end = time.time()
     _LOGGER.info("Execution time: %s seconds", end - start)
 
-async def camera_list(secspy):
+async def camera_list(secspy, output: bool = True):
     """Returns a list of configured Cameras."""
 
     _LOGGER.info("GETTING CAMERA LIST:")
 
     try:
+        cameras = []
         data = await secspy.async_get_cameras()
         for row in data:
-            _LOGGER.info("\n" +
-                f"UID: {row.uid}" + "\n" + 
-                f"ONLINE: {row.online}" + "\n" + 
-                f"NAME: {row.name}" + "\n" + 
-                f"IMAGE WIDTH: {row.image_width}" + "\n" + 
-                f"IMAGE HEIGHT: {row.image_height}" + "\n" +
-                f"SENSITIVITY: {row.mdsensitivity}" + "\n" +
-                f"MODEL: {row.camera_model}" + "\n" + 
-                f"MODE_C: {row.mode_c}" + "\n" + 
-                f"MODE_M: {row.mode_m}" + "\n" + 
-                f"MODE_A: {row.mode_a}" + "\n" +
-                f"RECORDING MODE: {row.recording_mode}" + "\n" +
-                f"VIDEO: {row.rtsp_video}" + "\n" +
-                f"IMAGE: {row.still_image}" + "\n"
-            )
+            if output:
+                _LOGGER.info("\n" +
+                    f"UID: {row.uid}" + "\n" + 
+                    f"ONLINE: {row.online}" + "\n" + 
+                    f"NAME: {row.name}" + "\n" + 
+                    f"IMAGE WIDTH: {row.image_width}" + "\n" + 
+                    f"IMAGE HEIGHT: {row.image_height}" + "\n" +
+                    f"SENSITIVITY: {row.mdsensitivity}" + "\n" +
+                    f"MODEL: {row.camera_model}" + "\n" + 
+                    f"MODE_C: {row.mode_c}" + "\n" + 
+                    f"MODE_M: {row.mode_m}" + "\n" + 
+                    f"MODE_A: {row.mode_a}" + "\n" +
+                    f"RECORDING MODE: {row.recording_mode}" + "\n" +
+                    f"VIDEO: {row.rtsp_video}" + "\n" +
+                    f"IMAGE: {row.still_image}" + "\n"
+                )
+            
+            cameras.append(row.uid)
+        
+        return cameras
 
     except ResultError:
         _LOGGER.info("Something went wrong in retrieving data")
+
+async def snapshots(secspy, cameras):
+    """Save a snapshot of each available camera."""
+    _LOGGER.info("SAVE SNAPSHOTS:")
+
+    for camera in cameras:
+        filename = f"snapshot_{camera}.jpg"
+        image = await secspy.get_snapshot_image(camera)
+        with open(filename, "wb") as img_file:
+            _LOGGER.info(f"Writing snapshot {filename}")
+            img_file.write(image)
+            time.sleep(1)
+
+async def recording_mode(secspy, camera_id, recording_mode):
+    """Set recording mode for cameras."""
+    _LOGGER.info("SET RECORDING MODE:")
+
+    result = await secspy.set_recording_mode(camera_id, recording_mode)
+    _LOGGER.info(result)
+
+async def get_recording_mode(secspy, camera_id):
+    """Set recording mode for cameras."""
+    _LOGGER.info("GET RECORDING MODE:")
+
+    result = await secspy.get_recording_mode(camera_id)
+    for row in result:
+        _LOGGER.info(f"C: {row.mode_always} - M: {row.mode_motion} - A: {row.mode_action} - R: {row.is_recording} ")
 
 
 # Start the program
