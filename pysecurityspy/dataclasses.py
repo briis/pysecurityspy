@@ -18,6 +18,9 @@ class CameraData:
         self._image_height = data["image_height"]
         self._mdsensitivity = data["mdsensitivity"]
         self._camera_model = data["camera_model"]
+        self._camera_type = data["camera_type"]
+        self._address = data["address"]
+        self._port = data["port"]
         self._mode_c = data["mode_c"]
         self._mode_m = data["mode_m"]
         self._mode_a = data["mode_a"]
@@ -57,8 +60,23 @@ class CameraData:
 
     @property
     def camera_model(self) -> str:
-        """Model of Camera."""
+        """The name of the underlying video device."""
         return self._camera_model
+
+    @property
+    def camera_type(self) -> str:
+        """The type of device this is: Network, Local or DV."""
+        return self._camera_type
+
+    @property
+    def address(self) -> str:
+        """The network address (network devices only)."""
+        return self._address
+
+    @property
+    def port(self) -> str:
+        """The network port (network devices only)."""
+        return self._port
 
     @property
     def mode_c(self) -> str:

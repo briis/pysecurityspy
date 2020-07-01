@@ -70,7 +70,10 @@ async def camera_list(secspy, output: bool = True):
                     f"IMAGE WIDTH: {row.image_width}" + "\n" + 
                     f"IMAGE HEIGHT: {row.image_height}" + "\n" +
                     f"SENSITIVITY: {row.mdsensitivity}" + "\n" +
-                    f"MODEL: {row.camera_model}" + "\n" + 
+                    f"MODEL: {row.camera_model}" + "\n" +
+                    f"TYPE: {row.camera_type}" + "\n" +
+                    f"ADDRESS: {row.address}" + "\n" +
+                    f"PORT: {row.port}" + "\n" +
                     f"MODE_C: {row.mode_c}" + "\n" + 
                     f"MODE_M: {row.mode_m}" + "\n" + 
                     f"MODE_A: {row.mode_a}" + "\n" +
