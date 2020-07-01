@@ -26,8 +26,11 @@ async def run_tests():
 
    # Read the settings.json file
     path_index = __file__.rfind("/")
-    top_path = __file__[0:path_index]
-    filepath = f"{top_path}/settings.json"
+    if path_index == -1:
+        filepath = "settings.json"
+    else:
+        top_path = __file__[0:path_index]
+        filepath = f"{top_path}/settings.json"
     with open(filepath) as json_file:
         data = json.load(json_file)
         host = data["connection"]["host"]
