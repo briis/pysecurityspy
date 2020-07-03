@@ -11,6 +11,13 @@ from pysecurityspy.errors import (
     RequestError,
     ResultError,
 )
+from pysecurityspy.dataclasses import EventData
+from pysecurityspy.const import (
+    EVENT_TYPES,
+    EVENT_TYPE_MOTION,
+    EVENT_TYPE_CLASIFY,
+    EVENT_TYPE_TRIGGER_M,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,7 +40,11 @@ class SecuritySpyEvents:
         self._session: ClientSession = session
         self._auth = b64encode(bytes(self._username + ":" + self._password, "utf-8")).decode()
         self._base = "http" if not use_ssl else "https"
+        self._callbacks = []
 
+    async def registerCallback(self, callback):
+        """.Handle Callback Data."""
+        self._callbacks.append(callback)
 
     async def event_loop(self) -> None:
         """Main Event Loop listening for data."""
@@ -41,16 +52,45 @@ class SecuritySpyEvents:
         endpoint = f"{self._base}://{self._host}:{self._port}/++eventStream?version=3&format=multipart&auth={self._auth}"
         _LOGGER.debug(f"{endpoint}")
         try:
+            events = []
             async with self._session.request("get", endpoint) as resp:
+                box_pos_x = 0
+                box_pos_y = 0
+                box_pos_h = 0
+                box_pos_w = 0
+                trigger_type = 0
                 async for line in resp.content:
                     data = line.decode()
                     if data[:14].isnumeric():
                         event_arr = data.split(" ")
                         camera_id = event_arr[2]
-                        if event_arr[3] == "MOTION" and camera_id != "X":
-                            _LOGGER.info(f"MOTION DETECTED - CAMERA {camera_id}")
-                        elif event_arr[3] == "TRIGGER_M" and camera_id != "X":
-                            _LOGGER.info(f"MOTION CAPTURED: REASON: {event_arr[4]} - CAMERA {camera_id}")
+                        event_id = event_arr[3]
+                        if event_id in EVENT_TYPES:
+                            if event_id == EVENT_TYPE_MOTION:
+                                box_pos_x = int(event_arr[4])
+                                box_pos_y = int(event_arr[5])
+                                box_pos_w = int(event_arr[6])
+                                box_pos_h = int(event_arr[7])
+                            elif event_id == EVENT_TYPE_TRIGGER_M:
+                                trigger_type = int(event_arr[4])
+
+                            item = {
+                                "timestamp": event_arr[0],
+                                "camera_id": camera_id,
+                                "event_type": event_arr[3],
+                                "box_pos_x": box_pos_x,
+                                "box_pos_y": box_pos_y,
+                                "box_pos_h": box_pos_h,
+                                "box_pos_w": box_pos_w,
+                                "trigger_type": trigger_type,
+                            }
+                            events.append(EventData(item))
+                        else:
+                            events = []
+                        if events:
+                            for callback in self._callbacks:
+                                callback(events)
+
                     await asyncio.sleep(0.1)
         except asyncio.TimeoutError:
             raise RequestError("Request to endpoint timed out: {endpoint}")

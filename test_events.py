@@ -25,7 +25,9 @@ from pysecurityspy.const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-async def main() -> None:
+async def run_tests() -> None:
+
+    logging.basicConfig(level=logging.DEBUG)
 
 # Read the settings.json file
     path_index = __file__.rfind("/")
@@ -44,21 +46,18 @@ async def main() -> None:
 
     session = ClientSession()
     ssevents = SecuritySpyEvents(host, port, username, password, use_ssl, session)
+    await ssevents.registerCallback(update_callback)
 
-    eventlog = asyncio.create_task(ssevents.event_loop())
-
-    await asyncio.sleep(60)
-    
-    eventlog.cancel()
+    await ssevents.event_loop()
+   
     await session.close()
-    try:
-        await eventlog
-    except asyncio.CancelledError:
-        pass
 
-def cli():
-    asyncio.run(main())
+def update_callback(data):
+    for row in data:
+        _LOGGER.info(f"TIME: {row.timestamp} - ID: {row.camera_id} - TYPE: {row.event_type} - X: {row.box_pos_x} - Y: {row.box_pos_y} - H: {row.box_pos_h} - W: {row.box_pos_w} - TRIGGER: {row.trigger_type}")
 
 
-if __name__ == "__main__":
-    cli()
+# Start the program
+loop = asyncio.get_event_loop()
+loop.run_until_complete(run_tests())
+loop.close()

@@ -1,5 +1,6 @@
 """Defines the Data Classes used."""
 import logging
+from datetime import datetime
 from pysecurityspy.const import (
     MODE_ARMED,
     MODE_DISARMED
@@ -142,3 +143,57 @@ class RecordingSettings:
         if self.mode_always or self.mode_motion:
             return True
         return False
+
+class EventData:
+    """A representation of the Event Log."""
+
+    def __init__(self, data):
+        self._timestamp = data["timestamp"]
+        self._camera_id = data["camera_id"]
+        self._event_type = data["event_type"]
+        self._box_pos_x = data["box_pos_x"]
+        self._box_pos_y = data["box_pos_y"]
+        self._box_pos_h = data["box_pos_h"]
+        self._box_pos_w = data["box_pos_w"]
+        self._trigger_type = data["trigger_type"]
+
+    @property
+    def timestamp(self) -> str:
+        """Time event occurred."""
+        dt_obj = datetime.strptime(self._timestamp, "%Y%m%d%H%M%S")
+        return dt_obj
+
+    @property
+    def camera_id(self) -> str:
+        """The camera number, or X if the event does not refer to a specific camera."""
+        return self._camera_id
+
+    @property
+    def event_type(self) -> str:
+        """The type of event that occurred."""
+        return self._event_type
+
+    @property
+    def box_pos_x(self) -> int:
+        """Bounding box position X."""
+        return self._box_pos_x
+
+    @property
+    def box_pos_y(self) -> int:
+        """Bounding box position Y."""
+        return self._box_pos_y
+
+    @property
+    def box_pos_h(self) -> int:
+        """Bounding box Height."""
+        return self._box_pos_h
+
+    @property
+    def box_pos_w(self) -> int:
+        """Bounding box Width."""
+        return self._box_pos_w
+
+    @property
+    def trigger_type(self) -> str:
+        """Returns the reason for Motion Trigger."""
+        return self._trigger_type
