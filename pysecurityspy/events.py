@@ -59,6 +59,8 @@ class SecuritySpyEvents:
                 box_pos_h = 0
                 box_pos_w = 0
                 trigger_type = 0
+                classify_score = 0
+                classify_type = None
                 async for line in resp.content:
                     data = line.decode()
                     if data[:14].isnumeric():
@@ -73,7 +75,9 @@ class SecuritySpyEvents:
                                 box_pos_h = int(event_arr[7])
                             elif event_id == EVENT_TYPE_TRIGGER_M:
                                 trigger_type = int(event_arr[4])
-
+                            elif event_id == EVENT_TYPE_CLASIFY:
+                                classify_score = int(event_arr[5])
+                                classify_type = event_arr[4]
                             item = {
                                 "timestamp": event_arr[0],
                                 "camera_id": camera_id,
@@ -83,6 +87,8 @@ class SecuritySpyEvents:
                                 "box_pos_h": box_pos_h,
                                 "box_pos_w": box_pos_w,
                                 "trigger_type": trigger_type,
+                                "classify_score": classify_score,
+                                "classify_type": classify_type,
                             }
                             events.append(EventData(item))
                         else:

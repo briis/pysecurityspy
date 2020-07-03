@@ -3,7 +3,8 @@ import logging
 from datetime import datetime
 from pysecurityspy.const import (
     MODE_ARMED,
-    MODE_DISARMED
+    MODE_DISARMED,
+    TRIGGER_TYPE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -156,6 +157,8 @@ class EventData:
         self._box_pos_h = data["box_pos_h"]
         self._box_pos_w = data["box_pos_w"]
         self._trigger_type = data["trigger_type"]
+        self._classify_score = data["classify_score"]
+        self._classify_type = data["classify_type"]
 
     @property
     def timestamp(self) -> str:
@@ -196,4 +199,14 @@ class EventData:
     @property
     def trigger_type(self) -> str:
         """Returns the reason for Motion Trigger."""
-        return self._trigger_type
+        return TRIGGER_TYPE[self._trigger_type]
+
+    @property
+    def classify_score(self) -> int:
+        """Prediction percentage if Human or Vehicle."""
+        return self._classify_score
+
+    @property
+    def classify_type(self) -> str:
+        """Prediction type if Human or Vehicle."""
+        return self._classify_type

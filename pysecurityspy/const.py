@@ -28,6 +28,7 @@ EVENT_TYPES = [
 ]
 
 TRIGGER_TYPE = {
+    0: "None",
     1: "Video motion detection",
     2: "Audio detection",
     4: "AppleScript",
