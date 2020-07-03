@@ -42,10 +42,12 @@ async def run_tests():
     session = ClientSession()
     secspy = SecuritySpyServer(host, port, username, password, use_ssl, session)
 
-    cameras = await camera_list(secspy, True)
+    cameras = await camera_list(secspy, False)
+    await get_server_info(secspy)
+
     # await snapshots(secspy, cameras)
-    await recording_mode(secspy, 2, RECORDING_MODE_MOTION)
-    await get_recording_mode(secspy, 2)
+    # await recording_mode(secspy, 2, RECORDING_MODE_MOTION)
+    # await get_recording_mode(secspy, 2)
 
     #Close the session
     await session.close()
@@ -100,6 +102,11 @@ async def snapshots(secspy, cameras):
             _LOGGER.info(f"Writing snapshot {filename}")
             img_file.write(image)
             time.sleep(1)
+
+async def get_server_info(secspy):
+    """Display Server Information."""
+    result = await secspy.get_server_information()
+    _LOGGER.info(f"SERVER {result['name']}")
 
 async def recording_mode(secspy, camera_id, recording_mode):
     """Set recording mode for cameras."""

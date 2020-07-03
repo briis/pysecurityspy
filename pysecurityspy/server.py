@@ -51,6 +51,26 @@ class SecuritySpyServer:
     async def async_get_cameras(self) -> None:
         return await self._get_camera_list()
 
+    
+    async def get_server_information(self) -> None:
+        """Return information about the SecuritySpy Server."""
+        endpoint = f"{self._base}://{self._host}:{self._port}/++systemInfo&auth={self._auth}"
+        _LOGGER.debug(endpoint)
+        response = await self.async_request("get", endpoint)
+
+        data = ET.fromstring(response)
+        for item in data.iterfind('server'):
+            try:
+                row = {
+                    "name": item.findtext("name"),
+                    "version": item.findtext("version")
+                }
+                return row
+                
+            except BaseException as e:
+                _LOGGER.debug("Error when retrieving Server Data: " + str(e))
+                raise ResultError
+
     async def _get_camera_list(self) -> None:
         """Returns a list of the attached Cameras."""
         endpoint = f"{self._base}://{self._host}:{self._port}/++systemInfo&auth={self._auth}"
