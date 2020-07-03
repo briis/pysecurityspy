@@ -54,7 +54,7 @@ async def run_tests() -> None:
 
 def update_callback(data):
     for row in data:
-        _LOGGER.info(f"TIME: {row.timestamp} - ID: {row.camera_id} - TYPE: {row.event_type} - X: {row.box_pos_x} - Y: {row.box_pos_y} - H: {row.box_pos_h} - W: {row.box_pos_w} - TRIGGER: {row.trigger_type} - SCORE: {row.classify_score} - SCORE_TYPE: {row.classify_type}")
+        _LOGGER.info(f"TIME: {row.timestamp} - ID: {row.camera_id} - TYPE: {row.event_type} - X: {row.box_pos_x} - Y: {row.box_pos_y} - H: {row.box_pos_h} - W: {row.box_pos_w} '\n' TRIGGER: {row.trigger_type} - SCORE: {row.classify_score} - SCORE_TYPE: {row.classify_type} - IS_MOTION: {row.is_motion}")
 
 
 # Start the program

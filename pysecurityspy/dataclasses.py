@@ -210,3 +210,10 @@ class EventData:
     def classify_type(self) -> str:
         """Prediction type if Human or Vehicle."""
         return self._classify_type
+
+    @property
+    def is_motion(self) -> bool:
+        """Return True if Motion is active."""
+        if self.classify_score > 0:
+            return True
+        return False
