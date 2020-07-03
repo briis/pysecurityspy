@@ -1,5 +1,6 @@
 """Init file for pysecurityspy."""
 from pysecurityspy.server import SecuritySpyServer
+from pysecurityspy.events import SecuritySpyEvents
 from pysecurityspy.errors import (
     InvalidCredentials,
     RequestError,

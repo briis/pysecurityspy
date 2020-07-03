@@ -1,6 +1,7 @@
 """Module to communicate with the SecuritySpy API."""
 import logging
 import asyncio
+import sys
 import xml.etree.ElementTree as ET
 
 from typing import Optional
@@ -72,7 +73,6 @@ class SecuritySpyServer:
                     recording_mode = RECORDING_MODE_ALWAYS
                 elif mode_m == "armed":
                     recording_mode = RECORDING_MODE_MOTION
-                # rtsp_video = f"rtsp://{self._host}:{self._port}/++stream?cameraNum={uid}&width=1920&height=1080&req_fps=15&auth={self._auth}"
                 rtsp_video = f"rtsp://{self._username}:{self._password}@{self._host}:{self._port}/++stream?cameraNum={uid}&width=1920&height=1080&req_fps=15"
                 still_image = f"{self._base}://{self._host}:{self._port}/++image?cameraNum={uid}&width=1920&height=1080&quality=1&auth={self._auth}"
                 item = {
@@ -180,14 +180,8 @@ class SecuritySpyServer:
             raise RequestError("Request to endpoint timed out: {endpoint}")
         except ClientError as err:
             raise RequestError(f"Error requesting data from {endpoint}: {err}")
-            # if err.message == "Unauthorized":
-            #     raise InvalidCredentials("Your Username/Password combination is not correct")
-            # elif err.message == "Not Found":
-            #     raise ResultError("The Endpoint cannot be found")
-            # else:
-            #     raise RequestError(
-            #         f"Error requesting data from {endpoint}: {err}"
-            #     ) from None
+        except:
+            raise RequestError(f"Error occurred: {sys.exc_info()[1]}")
         finally:
             if not use_running_session:
                 await session.close()
