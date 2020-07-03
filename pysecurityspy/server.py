@@ -78,7 +78,7 @@ class SecuritySpyServer:
         response = await self.async_request("get", endpoint)
 
         cameras = ET.fromstring(response)
-        items = []
+        items = {}
         for item in cameras.iterfind('cameralist/camera'):
             try:
                 uid = item.findtext("number")
@@ -96,24 +96,25 @@ class SecuritySpyServer:
                 rtsp_video = f"rtsp://{self._username}:{self._password}@{self._host}:{self._port}/++stream?cameraNum={uid}&width=1920&height=1080&req_fps=15"
                 still_image = f"{self._base}://{self._host}:{self._port}/++image?cameraNum={uid}&width=1920&height=1080&quality=1&auth={self._auth}"
                 item = {
-                    "uid": int(uid),
-                    "online": online,
-                    "name": item.findtext("name"),
-                    "image_width": int(item.findtext("width")),
-                    "image_height": int(item.findtext("height")),
-                    "mdsensitivity": int(item.findtext("mdsensitivity")),
-                    "camera_model": item.findtext("devicename"),
-                    "camera_type": item.findtext("devicetype"),
-                    "address": item.findtext("address"),
-                    "port": item.findtext("port"),
-                    "mode_c": mode_c,
-                    "mode_m": mode_m,
-                    "mode_a": item.findtext("mode-a"),
-                    "recording_mode": recording_mode,
-                    "rtsp_video": rtsp_video,
-                    "still_image": still_image,
+                    int(uid): {
+                        "online": online,
+                        "name": item.findtext("name"),
+                        "image_width": int(item.findtext("width")),
+                        "image_height": int(item.findtext("height")),
+                        "mdsensitivity": int(item.findtext("mdsensitivity")),
+                        "camera_model": item.findtext("devicename"),
+                        "camera_type": item.findtext("devicetype"),
+                        "address": item.findtext("address"),
+                        "port": item.findtext("port"),
+                        "mode_c": mode_c,
+                        "mode_m": mode_m,
+                        "mode_a": item.findtext("mode-a"),
+                        "recording_mode": recording_mode,
+                        "rtsp_video": rtsp_video,
+                        "still_image": still_image,
+                    }
                 }
-                items.append(CameraData(item))
+                items.update(item)
 
             except BaseException as e:
                 _LOGGER.debug("Error when retrieving Camera Data: " + str(e))

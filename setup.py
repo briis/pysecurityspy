@@ -2,7 +2,7 @@ from distutils.core import setup
 setup(
   name = 'pysecurityspy',
   packages=['pysecurityspy'],
-  version = '0.1.3',
+  version = '0.1.4',
   license='MIT',
   description = 'Python Wrapper for SecuritySpy API', 
   author = 'Bjarne Riis',

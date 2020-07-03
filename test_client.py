@@ -42,7 +42,7 @@ async def run_tests():
     session = ClientSession()
     secspy = SecuritySpyServer(host, port, username, password, use_ssl, session)
 
-    cameras = await camera_list(secspy, False)
+    cameras = await camera_list(secspy, True)
     await get_server_info(secspy)
 
     # await snapshots(secspy, cameras)
@@ -63,28 +63,28 @@ async def camera_list(secspy, output: bool = True):
     try:
         cameras = []
         data = await secspy.async_get_cameras()
-        for row in data:
+        cameras = [camera for camera in data]
+        _LOGGER.info(cameras)
+        for camera in cameras:
             if output:
                 _LOGGER.info("\n" +
-                    f"UID: {row.uid}" + "\n" + 
-                    f"ONLINE: {row.online}" + "\n" + 
-                    f"NAME: {row.name}" + "\n" + 
-                    f"IMAGE WIDTH: {row.image_width}" + "\n" + 
-                    f"IMAGE HEIGHT: {row.image_height}" + "\n" +
-                    f"SENSITIVITY: {row.mdsensitivity}" + "\n" +
-                    f"MODEL: {row.camera_model}" + "\n" +
-                    f"TYPE: {row.camera_type}" + "\n" +
-                    f"ADDRESS: {row.address}" + "\n" +
-                    f"PORT: {row.port}" + "\n" +
-                    f"MODE_C: {row.mode_c}" + "\n" + 
-                    f"MODE_M: {row.mode_m}" + "\n" + 
-                    f"MODE_A: {row.mode_a}" + "\n" +
-                    f"RECORDING MODE: {row.recording_mode}" + "\n" +
-                    f"VIDEO: {row.rtsp_video}" + "\n" +
-                    f"IMAGE: {row.still_image}" + "\n"
+                    f"UID: {camera}" + "\n" + 
+                    f"ONLINE: {data[camera]['online']}" + "\n" + 
+                    f"NAME: {data[camera]['name']}" + "\n" + 
+                    f"IMAGE WIDTH: {data[camera]['image_width']}" + "\n" 
+                    # f"IMAGE HEIGHT: {row.image_height}" + "\n" +
+                    # f"SENSITIVITY: {row.mdsensitivity}" + "\n" +
+                    # f"MODEL: {row.camera_model}" + "\n" +
+                    # f"TYPE: {row.camera_type}" + "\n" +
+                    # f"ADDRESS: {row.address}" + "\n" +
+                    # f"PORT: {row.port}" + "\n" +
+                    # f"MODE_C: {row.mode_c}" + "\n" + 
+                    # f"MODE_M: {row.mode_m}" + "\n" + 
+                    # f"MODE_A: {row.mode_a}" + "\n" +
+                    # f"RECORDING MODE: {row.recording_mode}" + "\n" +
+                    # f"VIDEO: {row.rtsp_video}" + "\n" +
+                    # f"IMAGE: {row.still_image}" + "\n"
                 )
-            
-            cameras.append(row.uid)
         
         return cameras
 
