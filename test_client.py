@@ -62,7 +62,6 @@ async def camera_list(secspy, output: bool = True):
         _LOGGER.info(f"GETTING CAMERA LIST: ROUND {cnt}")
 
         try:
-            cameras = []
             data = await secspy.update()
             cameras = [camera for camera in data]
             _LOGGER.info(cameras)

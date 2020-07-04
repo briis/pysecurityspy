@@ -92,10 +92,9 @@ class SecuritySpyServer:
         response = await self.async_request("get", endpoint)
 
         cameras = ET.fromstring(response)
-        items = {}
         for item in cameras.iterfind('cameralist/camera'):
             try:
-                uid = item.findtext("number")
+                uid = int(item.findtext("number"))
                 if item.findtext("connected") == "yes":
                     online = True
                 else:
@@ -110,10 +109,10 @@ class SecuritySpyServer:
                 rtsp_video = f"rtsp://{self._username}:{self._password}@{self._host}:{self._port}/++stream?cameraNum={uid}&width=1920&height=1080&req_fps=15"
                 still_image = f"{self._base}://{self._host}:{self._port}/++image?cameraNum={uid}&width=1920&height=1080&quality=1&auth={self._auth}"
 
-                cameras = [camera for camera in self.device_data]
-                if uid not in cameras:
+                cams = [camera for camera in self.device_data]
+                if uid not in cams:
                     item = {
-                        int(uid): {
+                        uid: {
                             "online": online,
                             "name": item.findtext("name"),
                             "image_width": int(item.findtext("width")),
@@ -133,15 +132,15 @@ class SecuritySpyServer:
                     }
                     self.device_data.update(item)
                 else:
-                    camera_id = item[uid]
-                    self.device_data[camera_id]["recording_mode"] = recording_mode
-                    self.device_data[camera_id]["online"] = online
+                    self.device_data[uid]["recording_mode"] = recording_mode
+                    self.device_data[uid]["online"] = online
+                    self.device_data[uid]["mode_c"] = mode_c
+                    self.device_data[uid]["mode_m"] = mode_m
+                    self.device_data[uid]["mode_a"] = item.findtext("mode-a")
 
             except BaseException as e:
                 _LOGGER.debug("Error when retrieving Camera Data: " + str(e))
                 raise ResultError
-
-        return items
 
     async def get_snapshot_image(self, camera_id):
         """ Returns a Snapshot image from a Camera. """
