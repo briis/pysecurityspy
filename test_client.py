@@ -71,19 +71,19 @@ async def camera_list(secspy, output: bool = True):
                     f"UID: {camera}" + "\n" + 
                     f"ONLINE: {data[camera]['online']}" + "\n" + 
                     f"NAME: {data[camera]['name']}" + "\n" + 
-                    f"IMAGE WIDTH: {data[camera]['image_width']}" + "\n" 
-                    # f"IMAGE HEIGHT: {row.image_height}" + "\n" +
-                    # f"SENSITIVITY: {row.mdsensitivity}" + "\n" +
-                    # f"MODEL: {row.camera_model}" + "\n" +
-                    # f"TYPE: {row.camera_type}" + "\n" +
-                    # f"ADDRESS: {row.address}" + "\n" +
-                    # f"PORT: {row.port}" + "\n" +
-                    # f"MODE_C: {row.mode_c}" + "\n" + 
-                    # f"MODE_M: {row.mode_m}" + "\n" + 
-                    # f"MODE_A: {row.mode_a}" + "\n" +
-                    # f"RECORDING MODE: {row.recording_mode}" + "\n" +
-                    # f"VIDEO: {row.rtsp_video}" + "\n" +
-                    # f"IMAGE: {row.still_image}" + "\n"
+                    f"IMAGE WIDTH: {data[camera]['image_width']}" + "\n" +
+                    f"IMAGE HEIGHT: {data[camera]['image_height']}" + "\n" +
+                    f"SENSITIVITY: {data[camera]['mdsensitivity']}" + "\n" +
+                    f"MODEL: {data[camera]['camera_model']}" + "\n" +
+                    f"TYPE: {data[camera]['camera_type']}" + "\n" +
+                    f"ADDRESS: {data[camera]['address']}" + "\n" +
+                    f"PORT: {data[camera]['port']}" + "\n" +
+                    f"MODE_C: {data[camera]['mode_c']}" + "\n" + 
+                    f"MODE_M: {data[camera]['mode_m']}" + "\n" + 
+                    f"MODE_A: {data[camera]['mode_a']}" + "\n" +
+                    f"RECORDING MODE: {data[camera]['recording_mode']}" + "\n" +
+                    f"VIDEO: {data[camera]['rtsp_video']}" + "\n" +
+                    f"IMAGE: {data[camera]['still_image']}" + "\n"
                 )
         
         return cameras
@@ -106,7 +106,7 @@ async def snapshots(secspy, cameras):
 async def get_server_info(secspy):
     """Display Server Information."""
     result = await secspy.get_server_information()
-    _LOGGER.info(f"SERVER {result['name']}")
+    _LOGGER.info(f"SERVER {result['name']} - VERSION {result['version']} - HOST {result['host']}")
 
 async def recording_mode(secspy, camera_id, recording_mode):
     """Set recording mode for cameras."""
