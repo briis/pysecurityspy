@@ -61,9 +61,6 @@ class SecuritySpyServer:
         await self._get_camera_list()
         return self.devices
 
-    async def async_get_cameras(self) -> None:
-        return await self._get_camera_list()
-
     
     async def get_server_information(self) -> None:
         """Return information about the SecuritySpy Server."""

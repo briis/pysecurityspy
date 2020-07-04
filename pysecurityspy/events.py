@@ -5,6 +5,7 @@ from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientError
 from typing import Optional
 from base64 import b64encode
+import xml.etree.ElementTree as ET
 
 from pysecurityspy.errors import (
     InvalidCredentials,
@@ -41,6 +42,7 @@ class SecuritySpyEvents:
         self._auth = b64encode(bytes(self._username + ":" + self._password, "utf-8")).decode()
         self._base = "http" if not use_ssl else "https"
         self._callbacks = []
+        self.event_data = {}
 
     async def registerCallback(self, callback):
         """.Handle Callback Data."""
@@ -49,6 +51,31 @@ class SecuritySpyEvents:
     async def event_loop(self) -> None:
         """Main Event Loop listening for data."""
 
+        # Retrieve Camera details and create JSON structure
+        endpoint = f"{self._base}://{self._host}:{self._port}/++systemInfo&auth={self._auth}"
+        response = await self.async_request("get", endpoint)
+        cameras = ET.fromstring(response)
+        for item in cameras.iterfind('cameralist/camera'):
+            uid = int(item.findtext("number"))
+            name = item.findtext("name")
+            item = {
+                uid: {
+                    "name": name,
+                    "timestamp": None,
+                    "camera_id": 0,
+                    "event_type": 0,
+                    "box_pos_x": 0,
+                    "box_pos_y": 0,
+                    "box_pos_h": 0,
+                    "box_pos_w": 0,
+                    "trigger_type": 0,
+                    "classify_score": 0,
+                    "classify_type": None,
+                }
+            }
+            self.event_data.update(item)
+        
+        # Start the Event Loop Stream
         endpoint = f"{self._base}://{self._host}:{self._port}/++eventStream?version=3&format=multipart&auth={self._auth}"
         _LOGGER.debug(f"{endpoint}")
         try:
@@ -58,7 +85,7 @@ class SecuritySpyEvents:
                     data = line.decode()
                     if data[:14].isnumeric():
                         event_arr = data.split(" ")
-                        camera_id = event_arr[2]
+                        camera_id = int(event_arr[2])
                         event_id = event_arr[3]
                         if event_id in EVENT_TYPES:
                             if event_id == EVENT_TYPE_MOTION:
@@ -84,25 +111,18 @@ class SecuritySpyEvents:
                                 box_pos_y = 0
                                 box_pos_h = 0
                                 box_pos_w = 0
-                            item = {
-                                "timestamp": event_arr[0],
-                                "camera_id": camera_id,
-                                "event_type": event_arr[3],
-                                "box_pos_x": box_pos_x,
-                                "box_pos_y": box_pos_y,
-                                "box_pos_h": box_pos_h,
-                                "box_pos_w": box_pos_w,
-                                "trigger_type": trigger_type,
-                                "classify_score": classify_score,
-                                "classify_type": classify_type,
-                            }
-                            events.append(EventData(item))
-                        else:
-                            events = []
-                        if events:
-                            for callback in self._callbacks:
-                                callback(events)
-                                events = []
+                            self.event_data[camera_id]["timestamp"] = event_arr[0]
+                            self.event_data[camera_id]["event_type"] = event_arr[3]
+                            self.event_data[camera_id]["box_pos_x"] = box_pos_x
+                            self.event_data[camera_id]["box_pos_y"] = box_pos_y
+                            self.event_data[camera_id]["box_pos_w"] = box_pos_w
+                            self.event_data[camera_id]["box_pos_h"] = box_pos_h
+                            self.event_data[camera_id]["trigger_type"] = trigger_type
+                            self.event_data[camera_id]["classify_score"] = classify_score
+                            self.event_data[camera_id]["classify_type"] = classify_type
+
+                        for callback in self._callbacks:
+                            callback(self.event_data)
 
                     await asyncio.sleep(0)
 
