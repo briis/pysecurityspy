@@ -63,7 +63,8 @@ class SecuritySpyServer:
             try:
                 row = {
                     "name": item.findtext("name"),
-                    "version": item.findtext("version")
+                    "version": item.findtext("version"),
+                    "host": self._host
                 }
                 return row
                 
