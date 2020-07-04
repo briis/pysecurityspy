@@ -15,6 +15,8 @@ from pysecurityspy.const import (
     RECORDING_MODE_MOTION,
     RECORDING_MODE_ACTION,
     RECORDING_MODE_NEVER,
+    MODE_ARMED,
+    MODE_DISARMED,
 )
 from pysecurityspy.errors import (
     InvalidCredentials,
@@ -47,6 +49,17 @@ class SecuritySpyServer:
         self._session: ClientSession = session
         self._auth = b64encode(bytes(self._username + ":" + self._password, "utf-8")).decode()
         self._base = "http" if not use_ssl else "https"
+        self.device_data = {}
+
+    @property
+    def devices(self):
+        """ Returns a JSON formatted list of Devices. """
+        return self.device_data
+
+    async def update(self) -> dict:
+        """Returns the updated data."""
+        await self._get_camera_list()
+        return self.devices
 
     async def async_get_cameras(self) -> None:
         return await self._get_camera_list()
@@ -90,32 +103,39 @@ class SecuritySpyServer:
                 mode_c = item.findtext("mode-c")
                 mode_m = item.findtext("mode-m")
                 recording_mode = RECORDING_MODE_NEVER
-                if mode_c == "armed":
+                if mode_c == MODE_ARMED:
                     recording_mode = RECORDING_MODE_ALWAYS
-                elif mode_m == "armed":
+                elif mode_m == MODE_ARMED:
                     recording_mode = RECORDING_MODE_MOTION
                 rtsp_video = f"rtsp://{self._username}:{self._password}@{self._host}:{self._port}/++stream?cameraNum={uid}&width=1920&height=1080&req_fps=15"
                 still_image = f"{self._base}://{self._host}:{self._port}/++image?cameraNum={uid}&width=1920&height=1080&quality=1&auth={self._auth}"
-                item = {
-                    int(uid): {
-                        "online": online,
-                        "name": item.findtext("name"),
-                        "image_width": int(item.findtext("width")),
-                        "image_height": int(item.findtext("height")),
-                        "mdsensitivity": int(item.findtext("mdsensitivity")),
-                        "camera_model": item.findtext("devicename"),
-                        "camera_type": item.findtext("devicetype"),
-                        "address": item.findtext("address"),
-                        "port": item.findtext("port"),
-                        "mode_c": mode_c,
-                        "mode_m": mode_m,
-                        "mode_a": item.findtext("mode-a"),
-                        "recording_mode": recording_mode,
-                        "rtsp_video": rtsp_video,
-                        "still_image": still_image,
+
+                cameras = [camera for camera in self.device_data]
+                if uid not in cameras:
+                    item = {
+                        int(uid): {
+                            "online": online,
+                            "name": item.findtext("name"),
+                            "image_width": int(item.findtext("width")),
+                            "image_height": int(item.findtext("height")),
+                            "mdsensitivity": int(item.findtext("mdsensitivity")),
+                            "camera_model": item.findtext("devicename"),
+                            "camera_type": item.findtext("devicetype"),
+                            "address": item.findtext("address"),
+                            "port": item.findtext("port"),
+                            "mode_c": mode_c,
+                            "mode_m": mode_m,
+                            "mode_a": item.findtext("mode-a"),
+                            "recording_mode": recording_mode,
+                            "rtsp_video": rtsp_video,
+                            "still_image": still_image,
+                        }
                     }
-                }
-                items.update(item)
+                    self.device_data.update(item)
+                else:
+                    camera_id = item[uid]
+                    self.device_data[camera_id]["recording_mode"] = recording_mode
+                    self.device_data[camera_id]["online"] = online
 
             except BaseException as e:
                 _LOGGER.debug("Error when retrieving Camera Data: " + str(e))

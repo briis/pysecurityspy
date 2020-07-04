@@ -62,7 +62,7 @@ async def camera_list(secspy, output: bool = True):
 
     try:
         cameras = []
-        data = await secspy.async_get_cameras()
+        data = await secspy.update()
         cameras = [camera for camera in data]
         _LOGGER.info(cameras)
         for camera in cameras:
