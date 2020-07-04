@@ -142,7 +142,7 @@ class SecuritySpyServer:
             capturemode = "A"
         else:
             schedule = 0
-            capturemode = "CMA"
+            capturemode = "CM"
 
         endpoint = f"{self._base}://{self._host}:{self._port}/++setSchedule?cameraNum={camera_id}&schedule={schedule}&mode={capturemode}&override=0&auth={self._auth}"
         response = await self.async_request("get", endpoint, False)
