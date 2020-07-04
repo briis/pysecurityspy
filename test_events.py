@@ -53,8 +53,22 @@ async def run_tests() -> None:
     await session.close()
 
 def update_callback(data):
-    for row in data:
-        _LOGGER.info(f"TIME: {row.timestamp} - ID: {row.camera_id} - TYPE: {row.event_type} - X: {row.box_pos_x} - Y: {row.box_pos_y} - H: {row.box_pos_h} - W: {row.box_pos_w} '\n' TRIGGER: {row.trigger_type} - SCORE: {row.classify_score} - SCORE_TYPE: {row.classify_type} - IS_MOTION: {row.is_motion}")
+    _LOGGER.info("CALLBACK")
+    cameras = [camera for camera in data]
+    for camera in cameras:
+        if camera == 1:
+            _LOGGER.info("\n" +
+                f"UID: {camera}" + "\n" + 
+                f"NAME: {data[camera]['name']}" + "\n" + 
+                f"TIMESTAMP: {data[camera]['timestamp']}" + "\n" +
+                f"EVENT TYPE: {data[camera]['event_type']}" + "\n" +
+                f"TRIGGER: {data[camera]['trigger_type']}" + "\n" +
+                f"SCORE: {data[camera]['classify_score']}" + "\n" +
+                f"SCORE_TYPE: {data[camera]['classify_type']}" + "\n" 
+            )
+
+    # for row in data:
+    #     _LOGGER.info(f"TIME: {row.timestamp} - ID: {row.camera_id} - TYPE: {row.event_type} - X: {row.box_pos_x} - Y: {row.box_pos_y} - H: {row.box_pos_h} - W: {row.box_pos_w} '\n' TRIGGER: {row.trigger_type} - SCORE: {row.classify_score} - SCORE_TYPE: {row.classify_type} - IS_MOTION: {row.is_motion}")
 
 
 # Start the program
