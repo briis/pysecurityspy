@@ -57,39 +57,42 @@ async def run_tests():
 
 async def camera_list(secspy, output: bool = True):
     """Returns a list of configured Cameras."""
+    cnt = 0
+    while cnt < 10:
+        _LOGGER.info(f"GETTING CAMERA LIST: ROUND {cnt}")
 
-    _LOGGER.info("GETTING CAMERA LIST:")
+        try:
+            cameras = []
+            data = await secspy.update()
+            cameras = [camera for camera in data]
+            _LOGGER.info(cameras)
+            for camera in cameras:
+                if output and camera == 2:
+                    _LOGGER.info("\n" +
+                        f"UID: {camera}" + "\n" + 
+                        f"ONLINE: {data[camera]['online']}" + "\n" + 
+                        f"NAME: {data[camera]['name']}" + "\n" + 
+                        f"IMAGE WIDTH: {data[camera]['image_width']}" + "\n" +
+                        f"IMAGE HEIGHT: {data[camera]['image_height']}" + "\n" +
+                        f"SENSITIVITY: {data[camera]['mdsensitivity']}" + "\n" +
+                        f"MODEL: {data[camera]['camera_model']}" + "\n" +
+                        f"TYPE: {data[camera]['camera_type']}" + "\n" +
+                        f"ADDRESS: {data[camera]['address']}" + "\n" +
+                        f"PORT: {data[camera]['port']}" + "\n" +
+                        f"MODE_C: {data[camera]['mode_c']}" + "\n" + 
+                        f"MODE_M: {data[camera]['mode_m']}" + "\n" + 
+                        f"MODE_A: {data[camera]['mode_a']}" + "\n" +
+                        f"RECORDING MODE: {data[camera]['recording_mode']}" + "\n" +
+                        f"VIDEO: {data[camera]['rtsp_video']}" + "\n" +
+                        f"IMAGE: {data[camera]['still_image']}" + "\n"
+                    )
+            cnt = cnt + 1
+            await asyncio.sleep(2)
 
-    try:
-        cameras = []
-        data = await secspy.update()
-        cameras = [camera for camera in data]
-        _LOGGER.info(cameras)
-        for camera in cameras:
-            if output:
-                _LOGGER.info("\n" +
-                    f"UID: {camera}" + "\n" + 
-                    f"ONLINE: {data[camera]['online']}" + "\n" + 
-                    f"NAME: {data[camera]['name']}" + "\n" + 
-                    f"IMAGE WIDTH: {data[camera]['image_width']}" + "\n" +
-                    f"IMAGE HEIGHT: {data[camera]['image_height']}" + "\n" +
-                    f"SENSITIVITY: {data[camera]['mdsensitivity']}" + "\n" +
-                    f"MODEL: {data[camera]['camera_model']}" + "\n" +
-                    f"TYPE: {data[camera]['camera_type']}" + "\n" +
-                    f"ADDRESS: {data[camera]['address']}" + "\n" +
-                    f"PORT: {data[camera]['port']}" + "\n" +
-                    f"MODE_C: {data[camera]['mode_c']}" + "\n" + 
-                    f"MODE_M: {data[camera]['mode_m']}" + "\n" + 
-                    f"MODE_A: {data[camera]['mode_a']}" + "\n" +
-                    f"RECORDING MODE: {data[camera]['recording_mode']}" + "\n" +
-                    f"VIDEO: {data[camera]['rtsp_video']}" + "\n" +
-                    f"IMAGE: {data[camera]['still_image']}" + "\n"
-                )
-        
-        return cameras
+        except ResultError:
+            _LOGGER.info("Something went wrong in retrieving data")
 
-    except ResultError:
-        _LOGGER.info("Something went wrong in retrieving data")
+    return cameras
 
 async def snapshots(secspy, cameras):
     """Save a snapshot of each available camera."""
