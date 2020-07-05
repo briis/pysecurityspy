@@ -52,7 +52,7 @@ class SecuritySpyEvents:
         """ Returns a JSON formatted list of Events. """
         return self.event_data
 
-    def registerCallback(self, callback):
+    async def registerCallback(self, callback):
         """.Handle Callback Data."""
         self._callbacks.append(callback)
 

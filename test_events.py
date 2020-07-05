@@ -46,8 +46,8 @@ async def run_tests() -> None:
 
     session = ClientSession()
     ssevents = SecuritySpyEvents(host, port, username, password, use_ssl, session)
-    ssevents.registerCallback(update_callback)
 
+    await ssevents.registerCallback(update_callback)
     await ssevents.event_loop()
    
     await session.close()
