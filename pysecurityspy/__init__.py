@@ -15,4 +15,6 @@ from pysecurityspy.const import (
     EVENT_TYPE_MOTION,
     EVENT_TYPE_CLASIFY,
     EVENT_TYPE_TRIGGER_M,
+    EVENT_TYPE_FILE,
+    MOTION_TRIGGERS,
 )

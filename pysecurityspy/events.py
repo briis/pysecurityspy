@@ -19,6 +19,7 @@ from pysecurityspy.const import (
     EVENT_TYPE_MOTION,
     EVENT_TYPE_CLASIFY,
     EVENT_TYPE_TRIGGER_M,
+    EVENT_TYPE_FILE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,7 +52,7 @@ class SecuritySpyEvents:
         """ Returns a JSON formatted list of Events. """
         return self.event_data
 
-    async def registerCallback(self, callback):
+    def registerCallback(self, callback):
         """.Handle Callback Data."""
         self._callbacks.append(callback)
 
@@ -78,6 +79,7 @@ class SecuritySpyEvents:
                     "trigger_type": 0,
                     "classify_score": 0,
                     "classify_type": None,
+                    "is_motion": False,
                 }
             }
             self.event_data.update(item)
@@ -94,43 +96,25 @@ class SecuritySpyEvents:
                         camera_id = event_arr[2]
                         event_id = event_arr[3]
                         if event_id in EVENT_TYPES:
-                            _LOGGER.debug("SHOULD UPDATE")
-                            if event_id == EVENT_TYPE_MOTION:
-                                box_pos_x = int(event_arr[4])
-                                box_pos_y = int(event_arr[5])
-                                box_pos_w = int(event_arr[6])
-                                box_pos_h = int(event_arr[7])
-                                trigger_type = 0
-                                classify_score = 0
-                                classify_type = None
-                            elif event_id == EVENT_TYPE_TRIGGER_M:
-                                trigger_type = int(event_arr[4])
-                                box_pos_x = 0
-                                box_pos_y = 0
-                                box_pos_h = 0
-                                box_pos_w = 0
-                                classify_score = 0
-                                classify_type = None
-                            elif event_id == EVENT_TYPE_CLASIFY:
-                                classify_score = int(event_arr[5])
-                                classify_type = event_arr[4]
-                                box_pos_x = 0
-                                box_pos_y = 0
-                                box_pos_h = 0
-                                box_pos_w = 0
                             camera_id = int(camera_id)
+                            if event_id == EVENT_TYPE_MOTION:
+                                self.event_data[camera_id]["box_pos_x"] = int(event_arr[4])
+                                self.event_data[camera_id]["box_pos_y"] = int(event_arr[5])
+                                self.event_data[camera_id]["box_pos_w"] = int(event_arr[6])
+                                self.event_data[camera_id]["box_pos_h"] = int(event_arr[7])
+                            elif event_id == EVENT_TYPE_TRIGGER_M:
+                                self.event_data[camera_id]["trigger_type"] = int(event_arr[4])
+                                self.event_data[camera_id]["is_motion"] = True
+                            elif event_id == EVENT_TYPE_CLASIFY:
+                                self.event_data[camera_id]["classify_type"] = event_arr[4]
+                                self.event_data[camera_id]["classify_score"] = int(event_arr[5])
+                            elif event_id == EVENT_TYPE_FILE:
+                                self.event_data[camera_id]["is_motion"] = False
                             self.event_data[camera_id]["timestamp"] = event_arr[0]
                             self.event_data[camera_id]["event_type"] = event_arr[3]
-                            self.event_data[camera_id]["box_pos_x"] = box_pos_x
-                            self.event_data[camera_id]["box_pos_y"] = box_pos_y
-                            self.event_data[camera_id]["box_pos_w"] = box_pos_w
-                            self.event_data[camera_id]["box_pos_h"] = box_pos_h
-                            self.event_data[camera_id]["trigger_type"] = trigger_type
-                            self.event_data[camera_id]["classify_score"] = classify_score
-                            self.event_data[camera_id]["classify_type"] = classify_type
 
-                        for callback in self._callbacks:
-                            callback(self.events)
+                            for callback in self._callbacks:
+                                callback(self.events)
 
                     await asyncio.sleep(0)
 

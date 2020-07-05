@@ -46,7 +46,7 @@ async def run_tests() -> None:
 
     session = ClientSession()
     ssevents = SecuritySpyEvents(host, port, username, password, use_ssl, session)
-    await ssevents.registerCallback(update_callback)
+    ssevents.registerCallback(update_callback)
 
     await ssevents.event_loop()
    
@@ -64,7 +64,8 @@ def update_callback(data):
                 f"EVENT TYPE: {data[camera]['event_type']}" + "\n" +
                 f"TRIGGER: {data[camera]['trigger_type']}" + "\n" +
                 f"SCORE: {data[camera]['classify_score']}" + "\n" +
-                f"SCORE_TYPE: {data[camera]['classify_type']}" + "\n" 
+                f"SCORE_TYPE: {data[camera]['classify_type']}" + "\n" +
+                f"MOTION: {data[camera]['is_motion']}" + "\n" 
             )
 
     # for row in data:
