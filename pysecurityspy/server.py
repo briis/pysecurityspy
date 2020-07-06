@@ -8,6 +8,7 @@ from typing import Optional
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientError
 from base64 import b64encode
+from threading import Thread
 
 from pysecurityspy.const import (
     DEFAULT_TIMEOUT,
@@ -17,6 +18,11 @@ from pysecurityspy.const import (
     RECORDING_MODE_NEVER,
     MODE_ARMED,
     MODE_DISARMED,
+    EVENT_TYPES,
+    EVENT_TYPE_MOTION,
+    EVENT_TYPE_CLASIFY,
+    EVENT_TYPE_TRIGGER_M,
+    EVENT_TYPE_FILE,
 )
 from pysecurityspy.errors import (
     InvalidCredentials,
@@ -50,6 +56,7 @@ class SecuritySpyServer:
         self._auth = b64encode(bytes(self._username + ":" + self._password, "utf-8")).decode()
         self._base = "http" if not use_ssl else "https"
         self.device_data = {}
+        self.event_data = {}
 
     @property
     def devices(self):
@@ -85,7 +92,6 @@ class SecuritySpyServer:
     async def _get_camera_list(self) -> None:
         """Returns a list of the attached Cameras."""
         endpoint = f"{self._base}://{self._host}:{self._port}/++systemInfo&auth={self._auth}"
-        _LOGGER.debug(endpoint)
         response = await self.async_request("get", endpoint)
 
         cameras = ET.fromstring(response)
@@ -125,6 +131,7 @@ class SecuritySpyServer:
                             "recording_mode": recording_mode,
                             "rtsp_video": rtsp_video,
                             "still_image": still_image,
+                            "is_motion": False,
                         }
                     }
                     self.device_data.update(item)
@@ -192,6 +199,45 @@ class SecuritySpyServer:
             )
         )
         return items
+
+    async def event_loop(self) -> None:
+        """Main Event Loop listening for data."""
+        endpoint = f"{self._base}://{self._host}:{self._port}/++eventStream?version=3&format=multipart&auth={self._auth}"
+        try:
+            async with self._session.request("get", endpoint) as resp:
+                async for line in resp.content:
+                    data = line.decode()
+                    if data[:14].isnumeric():
+                        event_arr = data.split(" ")
+                        camera_id = event_arr[2]
+                        event_id = event_arr[3]
+                        if event_id in EVENT_TYPES:
+                            uid = int(camera_id)
+                            # if event_id == EVENT_TYPE_MOTION:
+                            #     self.event_data[camera_id]["box_pos_x"] = int(event_arr[4])
+                            #     self.event_data[camera_id]["box_pos_y"] = int(event_arr[5])
+                            #     self.event_data[camera_id]["box_pos_w"] = int(event_arr[6])
+                            #     self.event_data[camera_id]["box_pos_h"] = int(event_arr[7])
+                            if event_id == EVENT_TYPE_TRIGGER_M:
+                                # self.event_data[camera_id]["trigger_type"] = int(event_arr[4])
+                                self.device_data[uid]["is_motion"] = True
+                            # elif event_id == EVENT_TYPE_CLASIFY:
+                            #     self.event_data[camera_id]["classify_type"] = event_arr[4]
+                            #     self.event_data[camera_id]["classify_score"] = int(event_arr[5])
+                            elif event_id == EVENT_TYPE_FILE:
+                                self.device_data[uid]["is_motion"] = False
+                            # self.event_data[camera_id]["timestamp"] = event_arr[0]
+                            # self.event_data[camera_id]["event_type"] = event_arr[3]
+
+                            # for callback in self._callbacks:
+                            #     callback(cam_is_motion)
+
+                    await asyncio.sleep(0.1)
+
+        except asyncio.TimeoutError:
+            raise RequestError("Request to endpoint timed out: {endpoint}")
+        except ClientError as err:
+            raise RequestError(f"Error requesting data from {endpoint}: {err}")
 
     async def async_request(self, method: str, endpoint: str, rawdata: bool = False) -> dict:
         """Make a request against the SmartWeather API."""
