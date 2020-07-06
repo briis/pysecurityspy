@@ -8,7 +8,8 @@ from typing import Optional
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientError
 from base64 import b64encode
-from threading import Thread
+import threading
+import requests
 
 from pysecurityspy.const import (
     DEFAULT_TIMEOUT,
@@ -200,45 +201,6 @@ class SecuritySpyServer:
         )
         return items
 
-    async def event_loop(self) -> None:
-        """Main Event Loop listening for data."""
-        endpoint = f"{self._base}://{self._host}:{self._port}/++eventStream?version=3&format=multipart&auth={self._auth}"
-        try:
-            async with self._session.request("get", endpoint) as resp:
-                async for line in resp.content:
-                    data = line.decode()
-                    if data[:14].isnumeric():
-                        event_arr = data.split(" ")
-                        camera_id = event_arr[2]
-                        event_id = event_arr[3]
-                        if event_id in EVENT_TYPES:
-                            uid = int(camera_id)
-                            # if event_id == EVENT_TYPE_MOTION:
-                            #     self.event_data[camera_id]["box_pos_x"] = int(event_arr[4])
-                            #     self.event_data[camera_id]["box_pos_y"] = int(event_arr[5])
-                            #     self.event_data[camera_id]["box_pos_w"] = int(event_arr[6])
-                            #     self.event_data[camera_id]["box_pos_h"] = int(event_arr[7])
-                            if event_id == EVENT_TYPE_TRIGGER_M:
-                                # self.event_data[camera_id]["trigger_type"] = int(event_arr[4])
-                                self.device_data[uid]["is_motion"] = True
-                            # elif event_id == EVENT_TYPE_CLASIFY:
-                            #     self.event_data[camera_id]["classify_type"] = event_arr[4]
-                            #     self.event_data[camera_id]["classify_score"] = int(event_arr[5])
-                            elif event_id == EVENT_TYPE_FILE:
-                                self.device_data[uid]["is_motion"] = False
-                            # self.event_data[camera_id]["timestamp"] = event_arr[0]
-                            # self.event_data[camera_id]["event_type"] = event_arr[3]
-
-                            # for callback in self._callbacks:
-                            #     callback(cam_is_motion)
-
-                    await asyncio.sleep(0.1)
-
-        except asyncio.TimeoutError:
-            raise RequestError("Request to endpoint timed out: {endpoint}")
-        except ClientError as err:
-            raise RequestError(f"Error requesting data from {endpoint}: {err}")
-
     async def async_request(self, method: str, endpoint: str, rawdata: bool = False) -> dict:
         """Make a request against the SmartWeather API."""
 
@@ -269,3 +231,59 @@ class SecuritySpyServer:
         finally:
             if not use_running_session:
                 await session.close()
+
+class Events:
+    """The Event Loop Class."""
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        username: str,
+        password: str,
+        use_ssl: bool = False,
+        session: Optional[ClientSession] = None,
+        event_callback=None,
+    ):
+        self._host = host
+        self._port = port
+        self._username = username
+        self._password = password
+        self._session: ClientSession = session
+        self._auth = b64encode(bytes(self._username + ":" + self._password, "utf-8")).decode()
+        self._base = "http" if not use_ssl else "https"
+        self.event_data = {}
+
+        self._run_event = threading.Event()
+        self._run_event.set()
+        self.event_callback = event_callback
+        self._thread = threading.Thread(target=self._connect)
+        self._thread.setDaemon(True)
+        self._thread.start()
+
+    def _connect(self):
+        """Connect to Stream and send data."""
+
+        endpoint = f"{self._base}://{self._host}:{self._port}/++eventStream?version=3&format=multipart&auth={self._auth}"
+        while self._run_event.is_set():
+            response = self.session.get(endpoint)
+            if response.status_code == 200:
+                for line in response.content:
+                    data = line.decode()
+                    if data[:14].isnumeric():
+                        event_arr = data.split(" ")
+                        camera_id = event_arr[2]
+                        event_id = event_arr[3]
+                        if event_id in EVENT_TYPES:
+                            uid = int(camera_id)
+                            if event_id == EVENT_TYPE_TRIGGER_M:
+                                self.device_data[uid]["is_motion"] = True
+                            elif event_id == EVENT_TYPE_FILE:
+                                self.device_data[uid]["is_motion"] = False
+                            
+                            if self.event_callback:
+                                self.event_callback("")
+
+    def close_connection(self):
+        """ Close connection to event loop """
+        self._run_event.clear()
+        self._thread.join()
