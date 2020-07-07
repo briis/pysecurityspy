@@ -116,7 +116,7 @@ class SecuritySpyEvents:
                             for callback in self._callbacks:
                                 callback(self.events)
 
-                    await asyncio.sleep(0)
+                    await asyncio.sleep(0.1)
 
         except asyncio.TimeoutError:
             raise RequestError("Request to endpoint timed out: {endpoint}")

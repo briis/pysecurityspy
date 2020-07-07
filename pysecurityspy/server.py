@@ -8,8 +8,6 @@ from typing import Optional
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientError
 from base64 import b64encode
-import threading
-import requests
 
 from pysecurityspy.const import (
     DEFAULT_TIMEOUT,
@@ -232,58 +230,3 @@ class SecuritySpyServer:
             if not use_running_session:
                 await session.close()
 
-class Events:
-    """The Event Loop Class."""
-    def __init__(
-        self,
-        host: str,
-        port: int,
-        username: str,
-        password: str,
-        use_ssl: bool = False,
-        session: Optional[ClientSession] = None,
-        event_callback=None,
-    ):
-        self._host = host
-        self._port = port
-        self._username = username
-        self._password = password
-        self._session: ClientSession = session
-        self._auth = b64encode(bytes(self._username + ":" + self._password, "utf-8")).decode()
-        self._base = "http" if not use_ssl else "https"
-        self.event_data = {}
-
-        self._run_event = threading.Event()
-        self._run_event.set()
-        self.event_callback = event_callback
-        self._thread = threading.Thread(target=self._connect)
-        self._thread.setDaemon(True)
-        self._thread.start()
-
-    def _connect(self):
-        """Connect to Stream and send data."""
-
-        endpoint = f"{self._base}://{self._host}:{self._port}/++eventStream?version=3&format=multipart&auth={self._auth}"
-        while self._run_event.is_set():
-            response = self.session.get(endpoint)
-            if response.status_code == 200:
-                for line in response.content:
-                    data = line.decode()
-                    if data[:14].isnumeric():
-                        event_arr = data.split(" ")
-                        camera_id = event_arr[2]
-                        event_id = event_arr[3]
-                        if event_id in EVENT_TYPES:
-                            uid = int(camera_id)
-                            if event_id == EVENT_TYPE_TRIGGER_M:
-                                self.device_data[uid]["is_motion"] = True
-                            elif event_id == EVENT_TYPE_FILE:
-                                self.device_data[uid]["is_motion"] = False
-                            
-                            if self.event_callback:
-                                self.event_callback("")
-
-    def close_connection(self):
-        """ Close connection to event loop """
-        self._run_event.clear()
-        self._thread.join()
